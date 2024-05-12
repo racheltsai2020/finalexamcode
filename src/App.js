@@ -1,25 +1,25 @@
-import logo from './logo.svg';
 import './App.css';
+import Home from './pages/home';
+import Result from './pages/result';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import React from 'react';
+import { withAuthenticator, Button, Heading } from '@aws-amplify/ui-react';
+import { Amplify } from 'aws-amplify';
+import '@aws-amplify/ui-react/styles.css';
 
-function App() {
+import config from './amplifyconfiguration.json';
+Amplify.configure(config);
+
+const App = ({signOut, user}) => {
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <Router>
+      <Routes>
+        <Route exact path="/" element={<Home signOut={signOut} user={user}/>} />
+        <Route path="/result" element={<Result signOut={signOut} user={user} />} />
+      </Routes>
+    </Router>
   );
 }
 
-export default App;
+export default withAuthenticator(App);
