@@ -1,9 +1,10 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import os
-import subprocess
 import time
 import test
+import threading
+import sys
 
 app = Flask(__name__)
 CORS(app)
@@ -36,38 +37,54 @@ def handle_file():
     return jsonify({'message': 'Data processed successfully'})
 
 def run_test(test_func):
-    start_time = time.time()
 
-    try:
-        test_func()
-        runtime = (time.time() - start_time) * 1000
-        if runtime > 2000:
-            result ={
+    result = {
                 'test_name': test_func.__name__,
-                'status': 'FAILED (Took more than 2 seconds to run)',
-                'execution_time_ms': f"{runtime: .2f}"
+                'status': 'FAILED',
+                'execution_time_ms': 'N/A'
             }
-        else:
+    
+    def timeout_status(): 
+        nonlocal result   
+        start_time = time.time()
+        
+        try:
+            test_func()
+            runtime = (time.time() - start_time) * 1000
             result = {
                 'test_name': test_func.__name__,
                 'status': 'PASSED',
                 'execution_time_ms': f"{runtime: .2f}"
             }
-    except AssertionError:
-        runtime = (time.time() - start_time)*1000
-        result = {
+        except AssertionError:
+            result = {
             'test_name': test_func.__name__,
             'status': 'FAILED',
-            'execution_time_ms': f"{runtime: .2f}"
-        }
-    
-    except Exception:
-        result = {
+            'execution_time_ms': "N/A"
+            }
+        except Exception:
+            result = {
             'test_name': test_func.__name__,
             'status': 'FAILED (Compile error or the code provided is not in python)',
             'execution_time_ms': 'N/A'
+            }
+        finally:
+            runtime = (time.time() - start_time) * 1000
+        
+    thread = threading.Thread(target=timeout_status)
+    thread.start()
+    thread.join(0.2)
+
+    if thread.is_alive():
+        runtime = (2) * 1000
+        result ={
+                'test_name': test_func.__name__,
+                'status': 'FAILED (Took more than 2 seconds to run)',
+                'execution_time_ms': f"{runtime: .2f}"
         }
     return result
+
+    
 
 
 
